@@ -1,5 +1,5 @@
 "descriptives.scan" <-
-function(data,file,top=10,sortby="P1df",sep="\t") {
+function(data,file=NULL,top=10,sortby="P1df",sep="\t") {
 	if (!is(data,"scan.gwaa")) stop("data argument must be of scan.gwaa-class")
 
 	sbargs <- c("no","P1df","P2df","Pc1df")
@@ -31,7 +31,7 @@ function(data,file,top=10,sortby="P1df",sep="\t") {
 	#out <- cbind(chromosome(data)[ix],out)
 	#rownames(out) <- snpnames(data)[ix]
 	#colnames(out) <- c("Chromosome","Position","N","effB","P1df","Pc1df","effAB","effBB","P2df")
-	if (!missing(file)) {
+	if (!is.null(file)) {
 		cat(sep,file=file,sep="")
 		cat(colnames(out),file=file,sep=sep,append=TRUE)
 		cat("\n",file=file,sep="",append=TRUE)

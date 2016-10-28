@@ -1,5 +1,9 @@
 "load.gwaa.data" <-
-function(phenofile = "pheno.dat", genofile = "geno.raw",force = TRUE, makemap=FALSE, sort=TRUE, id="id") {
+function(phenofile = "pheno.dat", genofile = "geno.raw",force = TRUE, makemap=FALSE, sort=TRUE, id="id", snps=NULL, snpids=NULL) {
+## snps are the absolute postions of the snps to be loaded
+## snpids are the name of the snps to be loaded
+## TODO FIXME only one of the above should be provided
+
 # check that ID and SEX are correct
 	dta <- read.table(phenofile,header=TRUE,as.is=TRUE)
 	coln <- names(dta)
@@ -43,30 +47,48 @@ function(phenofile = "pheno.dat", genofile = "geno.raw",force = TRUE, makemap=FA
 	nids <- length(ids)
 	cat("ids loaded...\n")
 	mnams <- scan(file=ifile,what=character(),nlines=1,quiet=TRUE)
+
+        if(!is.null(snpids)){
+		## FIXME only load the requested snpids
+		snps <- which(mnams %in% snpids)
+		## ensure that snps is continues
+		snps <- seq(min(snps),max(snps))
+		mnams <- mnams[snps]
+	} else if(is.null(snps)){
+		snps <- 1:length(mnams)
+        } else {
+		## ensure that snps is continues
+		snps <- seq(min(snps),max(snps))
+		mnams <- mnams[snps]
+	}
+
 	cat("marker names loaded...\n")
-	chrom <- scan(file=ifile,what=character(),nlines=1,quiet=TRUE)
+	chrom <- scan(file=ifile,what=character(),nlines=1,quiet=TRUE)[snps]
 	chrom <- as.factor(chrom);gc(verbose=FALSE)
 	cat("chromosome data loaded...\n")
-	pos <- scan(file=ifile,what=double(),nlines=1,quiet=TRUE)
+	pos <- scan(file=ifile,what=double(),nlines=1,quiet=TRUE)[snps]
 	cat("map data loaded...\n")
 	if (ver==0) {
 		coding <- new("snp.coding",as.raw(rep(1,length(pos))))
 		strand <- new("snp.strand",as.raw(rep(0,length(pos))))
 	} else {
-		coding <- scan(file=ifile,what=raw(),nlines=1,quiet=TRUE)
+		coding <- scan(file=ifile,what=raw(),nlines=1,quiet=TRUE)[snps]
 		class(coding) <- "snp.coding"
 		cat("allele coding data loaded...\n")
-		strand <- scan(file=ifile,what=raw(),nlines=1,quiet=TRUE)
+		strand <- scan(file=ifile,what=raw(),nlines=1,quiet=TRUE)[snps]
 		class(strand) <- "snp.strand"
 		cat("strand data loaded...\n")
 	}
 	nsnps <- length(mnams)
 	nbytes <- ceiling(nids/4)
-	rdta <- scan(file=ifile,what=raw(),quiet=TRUE)
+	## TODO optimize and only load the requested snpids
+	rdta <- scan(file=ifile,what=raw(),quiet=TRUE, skip=min(snps)-1, nlines=nsnps)
+	# rdta <- fread(genofile)
 	cat("genotype data loaded...\n")
 	close(ifile)
 	dim(rdta) <- c(nbytes,nsnps)
-	rdta <- new("snp.mx",rdta);gc(verbose=FALSE)
+	rdta <- new("snp.mx",rdta);
+	gc(verbose=FALSE)
 
 # check errors of match between pheno and geno files
 	mlst0 <- match(as.character(dta$id),ids)
@@ -141,6 +163,9 @@ function(phenofile = "pheno.dat", genofile = "geno.raw",force = TRUE, makemap=FA
 #		ord <- order(chr,out@gtdata@map)
 		ord <- sortmap.internal(out@gtdata@chromosome,out@gtdata@map)
 		out <- out[,ord$ix]
+	}
+	if(!is.null(snpids)) {
+		out <- out[,snpids]
 	}
 	out
 }
