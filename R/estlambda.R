@@ -40,7 +40,7 @@
 "estlambda" <- function(data, plot=FALSE, proportion=1.0,
                         method="regression", filter=TRUE, df=1,... ) {
         data <- data[which(!is.na(data))]
-        data <- data[which(!data=Inf)]
+        data <- data[which(data!=Inf)]
         if (proportion>1.0 || proportion<=0)
                 stop("proportion argument should be greater then zero and less than or equal to one")
 
